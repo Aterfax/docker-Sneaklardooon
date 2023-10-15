@@ -6,4 +6,6 @@
 *.bak
 *.exe
 cmd/sneaker-server/resource.syso
-build-stack/built-binaries
+build-stack/built-binaries/jambon/*
+build-stack/built-binaries/lardoon/*
+build-stack/built-binaries/sneaker/*
