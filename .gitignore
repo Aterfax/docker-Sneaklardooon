@@ -5,7 +5,9 @@
 .env.production.local
 *.bak
 *.exe
-cmd/sneaker-server/resource.syso
+# Ignore build contents
 build-stack/built-binaries/jambon/*
 build-stack/built-binaries/lardoon/*
 build-stack/built-binaries/sneaker/*
+# Keep directories with a .gitkeep file
+!**/.gitkeep
