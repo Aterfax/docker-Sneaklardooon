@@ -1,0 +1,9 @@
+[submodule "lardoon"]
+	path = lardoon
+	url = https://github.com/team-limakilo/lardoon.git
+[submodule "jambon"]
+	path = jambon
+	url = https://github.com/team-limakilo/jambon.git
+[submodule "sneaker"]
+	path = sneaker
+	url = https://github.com/Special-K-s-Flightsim-Bots/sneaker.git
