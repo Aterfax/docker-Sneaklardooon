@@ -55,7 +55,7 @@ Eventually a Docker Compose example using a reverse proxy such as SWAG may be cr
 
 This section details the possible environment variables which can be set, their purpose and their defaults. You probably won't need to change anything away from defaults!
 
-If you do make any changes to defaults, please review the implementation of the use of these variables within the ``run`` files held within each s6-init service directory:  [docker_src\s6-src\s6-services](docker_src\s6-src\s6-services).
+If you do make any changes to defaults, please review the implementation of the use of these variables within the ``run`` files held within each s6-init service directory:  [docker_src/s6-src/s6-services](docker_src/s6-src/s6-services).
 
 If setting these variables away from defaults, be aware you are changing ports and paths *within* the container and container services. e.g. changing `SNEAKER_PORT` changes the port the Sneaker Web service is binding inside the container, thus you will need to adjust the container port specified within the ``.env`` file too.
 
