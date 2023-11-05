@@ -52,11 +52,5 @@ jobs:
               aterfax/sneaklardooon:${{ env.DATE }}
               ghcr.io/aterfax/sneaklardooon:${{ env.DATE }}
 
-        - name: Save the artifacts for this Docker build
-          uses: actions/upload-artifact@v3
-          with:
-            name: builds
-            path: build/
-
         - name: Image digest
           run: echo ${{ steps.docker_build.outputs.digest }}
