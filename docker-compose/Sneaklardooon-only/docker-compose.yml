@@ -1,0 +1,30 @@
+version: '3.3'
+services:
+  sneaklardooon:
+    container_name: sneaklardooon
+    hostname: sneaklardooon
+    environment:
+      - PUID
+      - PGID
+      - TZ
+      - CONFIG_FILE_NAME
+      - TACVIEW_FOLDER
+      - LARDOON_DB_NAME
+      - LARDOON_BIND_IP
+      - LARDOON_PORT
+      - LARDOON_WEB_TIMEOUT
+      - LARDOON_DAEMON_WAIT_TIME_PERIOD
+      - SNEAKER_BIND_IP
+      - SNEAKER_PORT
+      - SNEAKER_TIMEOUT
+      - JAMBON_TIMEOUT
+    ports:
+    # - HOST_PORT:DOCKER_INTERNAL_SERVICE_PORT
+      - "7788:${SNEAKER_PORT}"
+      - "3883:${LARDOON_PORT}"
+    volumes:
+    # - HOST_PATH:CONTAINER_PATH
+      - './config/:/config/'
+      - './tacview/:/tacview/'
+    restart: always
+    image: aterfax/sneaklardooon

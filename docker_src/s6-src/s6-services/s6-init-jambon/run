@@ -1,0 +1,112 @@
+#!/usr/bin/with-contenv bash
+# shellcheck shell=bash
+
+# Define a logging function to prefix output to the docker logs.
+output_to_log() {
+    sed  's/^/[s6-init-jambon] /'
+}
+export -f output_to_log
+
+# Define a function that allows further output to be logged to terminal when environment variable DEBUG=true
+debug_function() {
+    if [[ "${DEBUG,,}" == "true" || "${DEBUG,,}" == "1" ]]; then
+        "$@"
+    fi
+}
+export -f debug_function
+
+# Define a function that sets a variable based on the environment variable if set or a provided default value
+set_variable() {
+  local env_var_name="$1"
+  local default_value="$2"
+
+  # Check if the environment variable is set and not empty
+  if [ -n "${!env_var_name}" ]; then
+    local value="${!env_var_name}"
+  else
+    local value="$default_value"
+  fi
+
+  # Echo the value
+  echo "$value"
+}
+export -f set_variable
+
+sanitize_filename() {
+    # Replaces characters that might break a filename with an underscore
+    echo "$1" | tr -c '[:alnum:]' '_' | sed 's/_*$//'
+}
+
+# Ensure app binaries are available to execute.
+export PATH=/app/:$PATH
+
+# Set user tweakable variables 
+config_file_name=$(set_variable "CONFIG_FILE_NAME" "config.json")
+tacview_directory=$(set_variable "TACVIEW_FOLDER" "/tacview")
+timeout=$(set_variable "JAMBON_TIMEOUT" "10")
+
+# Set non-tweakable variables
+sneaker_config_directory="/config/sneaker"
+
+debug_function env | output_to_log
+
+# Ensure that the app and config folders are owned by the user from the container.
+lsiown -R abc:users /app/ | output_to_log
+
+# Create the tacview directory if it does not exist
+mkdir -p "$tacview_directory"
+
+# Ensure that the app and config folders are owned by the user from the container.
+lsiown -R abc:users /app/ | output_to_log
+lsiown -R abc:users "$tacview_directory" | output_to_log
+
+# Define sneaker_config_path variable
+sneaker_config_path="$sneaker_config_directory/$config_file_name"
+
+# Check if the executable and config file exist
+if [ ! -e "/app/jambon" ] || [ ! -e "$sneaker_config_path" ]; then
+    echo "Jambon executable or Sneaker config file not found. Exiting." | output_to_log
+    exit 1
+fi
+
+# Check if the JSON file follows the expected format
+json_check=$(jq empty < "$sneaker_config_path" 2>&1)
+
+if [ $? -ne 0 ]; then
+    echo "Warning: Sneaker config appears to be invalid. Exiting." | output_to_log
+    echo "Error details: $json_check" | output_to_log
+    exit 1
+fi
+
+# Associative array to store running Jambon process IDs.
+declare -A server_pids  
+
+# Parse the JSON and run the command for each server
+while true; do
+    # Parse the JSON and run the command for each server
+    for server in $(cat "$sneaker_config_path" | jq -r '.servers[] | @base64'); do
+        name=$(echo "$server" | base64 --decode | jq -r '.name')
+        sanitized_name=$(sanitize_filename "$name")
+        hostname=$(echo "$server" | base64 --decode | jq -r '.hostname')
+        port=$(echo "$server" | base64 --decode | jq -r '.port')
+        date=$(date +%Y-%m-%d-%H-%M-%S)
+
+        server_tacview_directory="$tacview_directory/$sanitized_name"
+
+        # Check if directory exists or create it
+        if [ ! -d "$server_tacview_directory" ]; then
+            s6-setuidgid abc bash -c "mkdir -p $server_tacview_directory"
+        fi
+
+        output_file="$server_tacview_directory/${sanitized_name}_${date}.acmi"
+
+        if [ -n "${server_pids[$hostname]}" ] && ps -p "${server_pids[$hostname]}" &> /dev/null; then
+            debug_function echo "Jambon recording of $hostname is already running with PID ${server_pids[$hostname]}" | output_to_log
+        else
+            echo "Starting/restarting Jambon recording of $hostname" | output_to_log
+            s6-setuidgid abc bash -c "/app/jambon record --server $hostname --output $output_file 2>&1 | output_to_log" &
+            server_pids[$hostname]=$!
+        fi
+    done
+    sleep $timeout
+done

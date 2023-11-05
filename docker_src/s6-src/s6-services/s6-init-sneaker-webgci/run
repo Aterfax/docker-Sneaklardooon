@@ -1,0 +1,106 @@
+#!/usr/bin/with-contenv bash
+# shellcheck shell=bash
+
+# Define a logging function to prefix output to the docker logs.
+output_to_log() {
+    sed  's/^/[s6-init-sneaker-webgci] /'
+}
+export -f output_to_log
+
+# Define a function that allows further output to be logged to terminal when environment variable DEBUG=true
+debug_function() {
+    if [[ "${DEBUG,,}" == "true" || "${DEBUG,,}" == "1" ]]; then
+        "$@"
+    fi
+}
+export -f debug_function
+
+# Define a function that sets a variable based on the environment variable if set or a provided default value
+set_variable() {
+  local env_var_name="$1"
+  local default_value="$2"
+
+  # Check if the environment variable is set and not empty
+  if [ -n "${!env_var_name}" ]; then
+    local value="${!env_var_name}"
+  else
+    local value="$default_value"
+  fi
+
+  # Echo the value
+  echo "$value"
+}
+export -f set_variable
+
+# Ensure app binaries are available to execute.
+export PATH=/app/:$PATH
+
+# Set user tweakable variables 
+config_file_name=$(set_variable "CONFIG_FILE_NAME" "config.json")
+bind_ip=$(set_variable "SNEAKER_BIND_IP" "0.0.0.0")
+port=$(set_variable "SNEAKER_PORT" "7788")
+timeout=$(set_variable "SNEAKER_TIMEOUT" "30")
+
+# Set non-tweakable variables
+sneaker_config_directory="/config/sneaker"
+startup_iterator=1
+restarts=0
+service_check_url="http://localhost:"${port}
+bind_address=${bind_ip}":"${port}
+
+debug_function env | output_to_log
+
+# Create the config directory if it does not exist
+mkdir -p "$sneaker_config_directory"
+
+# Ensure that the app and config folders are owned by the user from the container.
+lsiown -R abc:users /app/ | output_to_log
+lsiown -R abc:users "$sneaker_config_directory" | output_to_log
+
+# Define sneaker_config_path variable
+sneaker_config_path="$sneaker_config_directory/$config_file_name"
+
+# Check if the executable and config file exist
+if [ ! -e "/app/sneaker" ] || [ ! -e "$sneaker_config_path" ]; then
+    echo "Sneaker executable or config file not found. Exiting." | output_to_log
+    exit 1
+fi
+
+# Check if the JSON file follows the expected format
+json_check=$(jq empty < "$sneaker_config_path" 2>&1)
+
+if [ $? -ne 0 ]; then
+    echo "Warning: Sneaker config appears to be invalid. Exiting." | output_to_log
+    echo "Error details: $json_check" | output_to_log
+    exit 1
+fi
+
+# Change to the specified working directory
+cd "$sneaker_config_directory" || exit 1
+
+while true; do
+pid=""
+
+    if [ $startup_iterator -eq 1 ]; then
+        echo "Starting Sneaker WebGCI on $bind_address" | output_to_log
+        s6-setuidgid abc bash -c "/app/sneaker --config $sneaker_config_path --bind $bind_address 2>&1 | output_to_log" &
+        pid=$! # This grabs the PID of the running Sneaker process and keeps it for later if needed.
+        echo "PID="$pid | output_to_log
+        sleep $timeout # Give the Web service time to start up.
+    fi
+
+    while true; do
+        # Check if the service is responding with curl
+        if curl --max-time 10 -s -o /dev/null "$service_check_url"; then
+            debug_function echo "############### Sneaker WebGCI Service is responding. ###############" $(date +"%d-%m-%y-%T") | output_to_log
+            sleep $timeout
+        else
+            debug_function echo "############### Sneaker WebGCI Service is not responding. Restarting... ###############" $(date +"%d-%m-%y-%T") | output_to_log
+            debug_function echo "############### Sneaker WebGCI Service restart counter = $restarts ###############" $(date +"%d-%m-%y-%T") | output_to_log
+            kill -9 "$pid"  # Kill the background process (Use the stored PID.)
+            startup_iterator=1
+            restarts=$((restarts + 1))
+            break
+        fi
+    done
+done
