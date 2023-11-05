@@ -1,5 +1,9 @@
 # docker-Sneaklardooon
 
+[![Build and Publish Docker Image](https://github.com/Aterfax/docker-Sneaklardooon/actions/workflows/build-docker.yml/badge.svg)](https://github.com/Aterfax/docker-Sneaklardooon/actions/workflows/build-docker.yml)
+![Docker Image Size (tag)](https://img.shields.io/docker/image-size/aterfax/sneaklardooon/latest)
+![Docker Pulls](https://img.shields.io/docker/pulls/aterfax/sneaklardooon)
+
 This repo contains the source files and configuration needed to create the Sneaklardooon Docker container. The Sneaklardooon Docker container is an amalgamation of several pieces of software typically used to record, monitor and display information about running DCS World servers via the Tacview server plugin.
 
 This Docker container is largely making use of the existing Sneaker ``config.json`` configuration file to elect the servers of interest, Docker bind mounts to supply config or save relevant files and exposes each web service over its own port.
