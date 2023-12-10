@@ -32,7 +32,7 @@ RUN go mod download && env GOOS=linux GOARCH=amd64 go build -v -o ./jambon cmd/j
 #
 #################### Create main Docker image ####################
 #
-FROM ghcr.io/linuxserver/baseimage-alpine:3.19
+FROM ghcr.io/linuxserver/baseimage-alpine:3.18
 LABEL maintainer="Aterfax"
 #
 COPY --from=build-env /app /app/
