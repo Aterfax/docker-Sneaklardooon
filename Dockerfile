@@ -2,7 +2,7 @@
 # Sneaklardooon Dockerfile.
 #
 #
-FROM golang:alpine AS build-env
+FROM golang:alpine3.18 AS build-env
 #
 # Copy source from repo submodules
 COPY /sneaker /sneaker_build
