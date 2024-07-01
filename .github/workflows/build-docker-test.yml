@@ -23,7 +23,7 @@ jobs:
           run: echo "DATE=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
 
         - name: Build image only
-          uses: docker/build-push-action@v5
+          uses: docker/build-push-action@v6
           with:
             context: .
             push: false
