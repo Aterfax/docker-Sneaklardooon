@@ -2,7 +2,7 @@
 # Sneaklardooon Dockerfile.
 #
 #
-FROM golang:alpine3.18 AS build-env
+FROM golang:alpine3.21 AS build-env
 #
 # Copy source from repo submodules
 COPY /sneaker /sneaker_build
@@ -32,7 +32,7 @@ RUN go mod download && env GOOS=linux GOARCH=amd64 go build -v -o ./jambon cmd/j
 #
 #################### Create main Docker image ####################
 #
-FROM ghcr.io/linuxserver/baseimage-alpine:3.18
+FROM ghcr.io/linuxserver/baseimage-alpine:3.21
 LABEL maintainer="Aterfax"
 #
 COPY --from=build-env /app /app/
