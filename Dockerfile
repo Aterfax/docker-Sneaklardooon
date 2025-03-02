@@ -24,7 +24,7 @@ RUN go generate && env GOOS=linux GOARCH=386 go build -o ./sneaker cmd/sneaker-s
 # Build Lardoon
 WORKDIR /lardoon_build
 RUN export NODE_ENV=production && npm ci --include=dev && npm run build
-RUN env CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -v -o ./lardoon cmd/lardoon/main.go && chmod +x lardoon && mv lardoon /app/lardoon
+RUN env CGO_ENABLED=1 CGO_CFLAGS="-D_LARGEFILE64_SOURCE" GOOS=linux GOARCH=amd64 go build -v -o ./lardoon cmd/lardoon/main.go && chmod +x lardoon && mv lardoon /app/lardoon
 #
 # Build Jambon
 WORKDIR /jambon_build
