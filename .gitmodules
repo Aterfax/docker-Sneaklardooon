@@ -7,3 +7,4 @@
 [submodule "sneaker"]
 	path = sneaker
 	url = https://github.com/Aterfax/sneaker.git
+	branch = master
