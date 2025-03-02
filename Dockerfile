@@ -2,7 +2,7 @@
 # Sneaklardooon Dockerfile.
 #
 #
-FROM golang:alpine3.18 AS build-env
+FROM golang:alpine3.21 AS build-env
 #
 # Copy source from repo submodules
 COPY /sneaker /sneaker_build
@@ -10,7 +10,7 @@ COPY /lardoon /lardoon_build
 COPY /jambon /jambon_build
 #
 # Install pre-reqs
-RUN apk --no-cache add build-base git gcc ca-certificates nodejs-current yarn npm
+RUN apk --no-cache add build-base git ca-certificates nodejs-current yarn npm
 #
 # Make the app dir so the binaries have somewhere to go
 RUN mkdir /app
@@ -24,7 +24,7 @@ RUN go generate && env GOOS=linux GOARCH=386 go build -o ./sneaker cmd/sneaker-s
 # Build Lardoon
 WORKDIR /lardoon_build
 RUN export NODE_ENV=production && npm ci --include=dev && npm run build
-RUN env GOOS=linux GOARCH=amd64 go build -v -o ./lardoon cmd/lardoon/main.go && chmod +x lardoon && mv lardoon /app/lardoon
+RUN env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -o ./lardoon cmd/lardoon/main.go && chmod +x lardoon && mv lardoon /app/lardoon
 #
 # Build Jambon
 WORKDIR /jambon_build
@@ -32,7 +32,7 @@ RUN go mod download && env GOOS=linux GOARCH=amd64 go build -v -o ./jambon cmd/j
 #
 #################### Create main Docker image ####################
 #
-FROM ghcr.io/linuxserver/baseimage-alpine:3.18
+FROM ghcr.io/linuxserver/baseimage-alpine:3.21
 LABEL maintainer="Aterfax"
 #
 COPY --from=build-env /app /app/
