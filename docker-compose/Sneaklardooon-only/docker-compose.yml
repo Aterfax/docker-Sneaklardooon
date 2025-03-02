@@ -27,4 +27,4 @@ services:
       - './config/:/config/'
       - './tacview/:/tacview/'
     restart: always
-    image: aterfax/sneaklardooon
+    image: aterfax/sneaklardooon:latest
